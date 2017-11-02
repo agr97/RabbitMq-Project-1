@@ -2,7 +2,7 @@
     {
       "queueName": "queue1",
       "items": [
-        1,
+        "a",
         2,
         3,
         4,
@@ -24,7 +24,7 @@
       ]
     },
     {
-      "queueName": "queue2",
+      "queueName": "queue3",
       "items": [
         "e",
         "5",
