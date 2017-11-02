@@ -1,11 +1,9 @@
 const express = require('express');
-const fileUpload = require('express-fileupload');
-const bodyParser = require('body-parser');
-
-const app = express();
-app.use(fileUpload());
-app.use(bodyParser.urlencoded({ extended: true }));
+const multer = require('multer');
 const amqp = require('amqplib/callback_api');
+
+const upload = multer({ storage: multer.memoryStorage() });
+const app = express();
 
 app.get('/', (request, response) => {
   response.sendFile(`${__dirname}/` + 'index.html');
@@ -15,8 +13,8 @@ amqp.connect('amqp://cdllbwik:zTqDj6ZKHD4EM4IYRCNmcGDEDb3Lrjgt@mosquito.rmq.clou
   conn.createChannel((err, ch) => {
     console.log('Connected to cloudAMPQ');
 
-    app.post('/upload', function (req, res) {
-      const jsonArray = JSON.parse(req.files.form.data);
+    app.post('/file', upload.single('queueFile'), function (req, res) {
+      const jsonArray = JSON.parse(req.file.buffer);
 
       jsonArray.forEach(function (queue) {
         ch.assertQueue(queue.queueName, { durable: false });
@@ -29,10 +27,9 @@ amqp.connect('amqp://cdllbwik:zTqDj6ZKHD4EM4IYRCNmcGDEDb3Lrjgt@mosquito.rmq.clou
       }, this);
     });
 
-    const q = 'queue2';
-
-    app.post('/', (req, res) => {
-      ch.sendToQueue(q, new Buffer(req.body.text));
+    app.post('/', upload.none(), (req, res) => {
+      ch.assertQueue(req.body.queueName, { durable: false });
+      ch.sendToQueue(req.body.queueName, new Buffer(req.body.itemName));
       console.log('Sent Message');
     });
   });
